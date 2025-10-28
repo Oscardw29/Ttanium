@@ -46,7 +46,14 @@
     function loadTasks(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; } }
     function saveTasks(obj){ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
 
-    function normalizeDateKey(k){ return k; }
+    function formatDate(dateStr) {
+      const [year, month, day] = dateStr.split('-');
+      return new Date(year, month - 1, day).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
 
     function buildList(){
       const all = loadTasks();
@@ -66,7 +73,7 @@
         // marcar estado en data-attribute para estilos
         row.setAttribute('data-status', r.status);
         if(r.status === 'completado') row.classList.add('completed');
-        const date = document.createElement('div'); date.className='task-date'; date.textContent = r.date;
+        const date = document.createElement('div'); date.className='task-date'; date.textContent = formatDate(r.date);
         const text = document.createElement('div'); text.className='task-text'; text.textContent = r.text;
         const status = document.createElement('div');
         const pill = document.createElement('span');
@@ -110,7 +117,20 @@
       });
     }
 
-    document.getElementById('backBtn').addEventListener('click', ()=>{ window.location.href='https://sites.google.com/ttanium.net/inicio/agenda'; });
+    document.getElementById('backBtn').addEventListener('click', ()=>{ window.location.href='calendario.html'; });
+
+    // Obtener la fecha del parámetro URL si existe
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateParam = urlParams.get('date');
+    
+    if (dateParam) {
+      const tasks = loadTasks();
+      if (!tasks[dateParam]) {
+        tasks[dateParam] = [];
+        saveTasks(tasks);
+      }
+      document.querySelector('h1').textContent = `Tareas para ${formatDate(dateParam)}`;
+    }
 
     buildList();
   </script>
