@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Listado de tareas - Titanium</title>
+  <style>
+  :root{ --accent:#0f172a; --bg:#ffffff; }
+  body{ font-family: Poppins, system-ui, -apple-system, sans-serif; margin:24px; background:var(--bg); color:#0f172a; border-radius:20px; }
+  /* Card limpio: sin fondo ni sombra para aspecto minimal */
+  .card{ background:transparent; border-radius:20px; padding:0; max-width:1000px; margin:0 auto; box-shadow:none; margin: 50px;}
+    h1{ margin:0 0 12px 0 }
+  .task-row{ display:flex; gap:12px; align-items:center; padding:10px; border-radius:8px; border:1px solid rgba(15,23,42,0.04); margin-bottom:10px; background:transparent }
+    .task-date{ width:140px; color:#475569; font-weight:600 }
+    .task-text{ flex:1 }
+    .status-pill{ padding:6px 10px; border-radius:999px; font-weight:600; font-size:13px; }
+  .status-pendiente{ background:#fff7ed; color:#92400e; border:1px solid rgba(245,158,11,0.08) }
+  .status-proceso{ background:#eef2ff; color:#3730a3; border:1px solid rgba(99,102,241,0.08) }
+  .status-completado{ background:#ecfdf5; color:#065f46; border:1px solid rgba(16,185,129,0.08) }
+  /* estilos por fila según estado: borde izquierdo indicador */
+  .task-row[data-status="pendiente"]{ border-left: 4px solid rgba(245,158,11,0.18); }
+  .task-row[data-status="en proceso"]{ border-left: 4px solid rgba(99,102,241,0.18); }
+  .task-row[data-status="completado"]{ border-left: 4px solid rgba(16,185,129,0.18); opacity:0.9 }
+  .task-row.completed .task-text{ text-decoration: line-through; color:#6b7280 }
+    .actions button{ margin-left:8px; padding:6px 8px; border-radius:8px; border:1px solid rgba(15,23,42,0.06); background:transparent; cursor:pointer }
+  .topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px }
+  /* boton volver estilizado */
+  #backBtn{ background:#3b82f6; color:white; border:0; padding:8px 12px; border-radius:8px; cursor:pointer }
+  #backBtn:hover{ background:#2563eb }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="topbar">
+      <h1>Todas las tareas</h1>
+      <div>
+        <button id="backBtn">Volver al calendario</button>
+      </div>
+    </div>
+
+    <div id="list"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'tasks';
+    function loadTasks(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; } }
+    function saveTasks(obj){ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
+
+    function normalizeDateKey(k){ return k; }
+
+    function buildList(){
+      const all = loadTasks();
+      const listEl = document.getElementById('list');
+      listEl.innerHTML = '';
+      // flatten into array of {date, text, done, status, index}
+      const rows = [];
+      Object.keys(all).sort().forEach(dateKey=>{
+        (all[dateKey]||[]).forEach((t, idx)=> rows.push({ date: dateKey, text: t.text, done: !!t.done, status: t.status || (t.done? 'completado':'pendiente'), index: idx }));
+      });
+
+      if(rows.length === 0){ listEl.innerHTML = '<div class="muted">No hay tareas guardadas.</div>'; return; }
+
+      rows.forEach((r, globalIndex)=>{
+        const row = document.createElement('div');
+        row.className = 'task-row';
+        // marcar estado en data-attribute para estilos
+        row.setAttribute('data-status', r.status);
+        if(r.status === 'completado') row.classList.add('completed');
+        const date = document.createElement('div'); date.className='task-date'; date.textContent = r.date;
+        const text = document.createElement('div'); text.className='task-text'; text.textContent = r.text;
+        const status = document.createElement('div');
+        const pill = document.createElement('span');
+        pill.className = 'status-pill ' + (r.status === 'completado' ? 'status-completado' : r.status === 'en proceso' ? 'status-proceso' : 'status-pendiente');
+        pill.textContent = r.status === 'completado' ? 'Completado' : (r.status === 'en proceso' ? 'En proceso' : 'Pendiente');
+        status.appendChild(pill);
+
+  const actions = document.createElement('div'); actions.className='actions';
+        // three-state changer
+        const sel = document.createElement('select');
+        const opts = [['pendiente','Pendiente'],['en proceso','En proceso'],['completado','Completado']];
+        opts.forEach(o=>{ const op = document.createElement('option'); op.value=o[0]; op.textContent=o[1]; if(o[0]===r.status) op.selected=true; sel.appendChild(op); });
+        sel.addEventListener('change', ()=>{
+          const data = loadTasks();
+          const bucket = data[r.date];
+          if(bucket && bucket[r.index]){
+            bucket[r.index].status = sel.value;
+            bucket[r.index].done = sel.value === 'completado';
+            saveTasks(data);
+            buildList();
+          }
+        });
+        const del = document.createElement('button'); del.textContent='Eliminar'; del.addEventListener('click', ()=>{
+          if(!confirm('Eliminar esta tarea?')) return;
+          const data = loadTasks();
+          data[r.date].splice(r.index,1);
+          if(data[r.date].length===0) delete data[r.date];
+          saveTasks(data);
+          buildList();
+        });
+
+  actions.appendChild(sel);
+        actions.appendChild(del);
+
+        row.appendChild(date);
+        row.appendChild(text);
+        row.appendChild(status);
+        row.appendChild(actions);
+
+        listEl.appendChild(row);
+      });
+    }
+
+    document.getElementById('backBtn').addEventListener('click', ()=>{ window.location.href='https://sites.google.com/ttanium.net/inicio/agenda'; });
+
+    buildList();
+  </script>
+</body>
+</html>
