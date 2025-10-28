@@ -270,9 +270,8 @@
         if (isSelected) day.classList.add('selected');
 
         day.addEventListener('click', () => {
-          selectedDay = new Date(year, month, i);
-          renderCalendar();
-          showTasks();
+          const dateKey = `${year}-${month + 1}-${i}`;
+          window.location.href = `${window.location.origin}${window.location.pathname.replace('calendario.html', 'tasks.html')}?date=${dateKey}`;
         });
 
         calendar.appendChild(day);

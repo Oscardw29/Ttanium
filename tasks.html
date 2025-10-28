@@ -117,7 +117,9 @@
       });
     }
 
-    document.getElementById('backBtn').addEventListener('click', ()=>{ window.location.href='calendario.html'; });
+    document.getElementById('backBtn').addEventListener('click', ()=>{ 
+      window.location.href = `${window.location.origin}${window.location.pathname.replace('tasks.html', 'calendario.html')}`;
+    });
 
     // Obtener la fecha del parámetro URL si existe
     const urlParams = new URLSearchParams(window.location.search);
