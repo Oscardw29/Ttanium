@@ -213,7 +213,6 @@
       <button id="nextMonth">Mes siguiente →</button>
     </div>
     <div class="center-controls" style="text-align:center; margin-bottom:10px;">
-      <button id="todayBtn">Ir al día de hoy</button>
       <button id="downloadBtn">Descargar tareas</button>
     </div>
     <div class="calendar" id="calendar"></div>
@@ -333,13 +332,6 @@
     document.getElementById('nextMonth').addEventListener('click', () => {
       currentDate.setMonth(currentDate.getMonth() + 1);
       renderCalendar();
-    });
-
-    document.getElementById('todayBtn').addEventListener('click', () => {
-      currentDate = new Date();
-      selectedDay = new Date();
-      renderCalendar();
-      showTasks();
     });
 
     document.getElementById('downloadBtn').addEventListener('click', () => {
