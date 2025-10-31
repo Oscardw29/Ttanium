@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ttanium</title>
+  <title>calendario</title>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -13,14 +13,19 @@
     }
     .container {
       max-width: 1100px;
-      margin: 40px auto;
+      margin: 20px auto;
       background: white;
       border-radius: 20px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.08);
       overflow: hidden;
       padding: 20px;
       transition: all 0.3s ease-in-out;
-      margin: 60px;
+    }
+    @media (max-width: 768px) {
+      .container {
+        margin: 10px;
+        padding: 15px;
+      }
     }
     h1 {
       text-align: center;
@@ -33,6 +38,8 @@
       align-items: center;
       margin-bottom: 10px;
       animation: fadeIn 0.5s ease;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     .calendar-header button {
       background: #3b82f6;
@@ -43,12 +50,31 @@
       cursor: pointer;
       font-weight: bold;
       transition: background 0.3s, transform 0.2s;
+      white-space: nowrap;
     }
-    /* .calendar-header button:hover {
-      background: #2563eb;
-      transform: scale(1.05);
-    } */
+    @media (max-width: 768px) {
+      .calendar-header {
+        text-align: center;
+      }
+      .calendar-header h2 {
+        font-size: 1.2em;
+        width: 100%;
+        order: -1;
+        margin-bottom: 10px;
+      }
+      .calendar-header button {
+        padding: 6px 10px;
+        font-size: 0.9em;
+      }
+    }
     /* centro: controlar botones como 'Hoy' y 'Descargar' para que coincidan con el header */
+    .center-controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
     .center-controls button {
       background: #3b82f6;
       border: none;
@@ -58,11 +84,18 @@
       cursor: pointer;
       font-weight: bold;
       transition: background 0.3s, transform 0.2s;
-      margin: 0 6px;
+      white-space: nowrap;
+      flex: 0 1 auto;
     }
     .center-controls button:hover {
       background: #2563eb;
       transform: scale(1.05);
+    }
+    @media (max-width: 480px) {
+      .center-controls button {
+        width: 100%;
+        padding: 10px;
+      }
     }
     /* calendario: eliminar animaciones/transforms para aspecto serio */
     .calendar {
@@ -70,20 +103,47 @@
       grid-template-columns: repeat(7, 1fr);
       gap: 10px;
       text-align: center;
-      /* sin transiciones a nivel de calendario */
       transition: none;
+    }
+    @media (max-width: 768px) {
+      .calendar {
+        gap: 5px;
+      }
+    }
+    @media (max-width: 480px) {
+      .calendar {
+        gap: 2px;
+      }
     }
     .day {
       background: #f1f5f9;
       padding: 18px 0;
       border-radius: 12px;
       cursor: pointer;
-      transition: none; /* quitar animaciones */
+      transition: none;
       user-select: none;
       color: #0f172a;
       font-weight: 500;
       border: 1px solid rgba(15,23,42,0.02);
-      position: relative; /* necesario para posicionar el badge */
+      position: relative;
+      min-height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @media (max-width: 768px) {
+      .day {
+        padding: 12px 0;
+        font-size: 0.9em;
+        border-radius: 8px;
+      }
+    }
+    @media (max-width: 480px) {
+      .day {
+        padding: 8px 0;
+        font-size: 0.85em;
+        border-radius: 6px;
+      }
     }
     .day:hover {
       /* sutil cambio de fondo sin transform */
@@ -109,8 +169,8 @@
     /* contador de tareas por día (pequeño) */
     .day-badge{
       position: absolute;
-      top: 6px;
-      right: 8px;
+      top: 4px;
+      right: 4px;
       background: #0f172a;
       color: #fff;
       font-size: 11px;
@@ -136,8 +196,31 @@
       border-radius: 10px;
       margin-bottom: 10px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      /* sin transiciones/transformaciones para un aspecto más serio */
       transition: none;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    @media (max-width: 480px) {
+      .task-list {
+        padding: 10px;
+      }
+      .task-item {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 15px;
+      }
+      .task-item > div:last-child {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .day-badge {
+        top: 2px;
+        right: 2px;
+        padding: 2px 5px;
+        font-size: 10px;
+      }
     }
     .task-item:hover {
       /* eliminar efecto de hover (sin escala) */
@@ -177,13 +260,15 @@
       display: flex;
       justify-content: center;
       margin-top: 20px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
     .add-task input {
-      width: 70%;
+      flex: 1;
+      min-width: 200px;
       padding: 10px;
       border-radius: 10px;
       border: 1px solid #cbd5e1;
-      margin-right: 10px;
     }
     .add-task button {
       background: #10b981;
@@ -193,6 +278,15 @@
       padding: 10px 20px;
       cursor: pointer;
       transition: background 0.3s, transform 0.2s;
+      white-space: nowrap;
+    }
+    @media (max-width: 480px) {
+      .add-task {
+        flex-direction: column;
+      }
+      .add-task button {
+        width: 100%;
+      }
     }
     .add-task button:hover {
       background: #059669;
@@ -213,6 +307,7 @@
       <button id="nextMonth">Mes siguiente →</button>
     </div>
     <div class="center-controls" style="text-align:center; margin-bottom:10px;">
+      <button id="todayBtn">Ir al día de hoy</button>
       <button id="downloadBtn">Descargar tareas</button>
     </div>
     <div class="calendar" id="calendar"></div>
@@ -269,8 +364,10 @@
         if (isSelected) day.classList.add('selected');
 
         day.addEventListener('click', () => {
-          const dateKey = `${year}-${month + 1}-${i}`;
-          window.location.href = `${window.location.origin}${window.location.pathname.replace('calendario.html', 'tasks.html')}?date=${dateKey}`;
+          document.querySelectorAll('.day').forEach(d => d.classList.remove('selected'));
+          day.classList.add('selected');
+          selectedDay = new Date(year, month, i);
+          showTasks();
         });
 
         calendar.appendChild(day);
@@ -342,6 +439,14 @@
       document.body.appendChild(a);
       a.click();
       a.remove();
+    });
+
+    document.getElementById('todayBtn').addEventListener('click', () => {
+      const today = new Date();
+      currentDate = new Date(today);
+      selectedDay = new Date(today);
+      renderCalendar();
+      showTasks();
     });
 
     renderCalendar();

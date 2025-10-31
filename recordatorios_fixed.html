@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recordatorios</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+      background: #f8fafc;
+      -webkit-font-smoothing:antialiased;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      overflow: hidden;
+      padding: 20px;
+      transition: all 0.3s ease-in-out;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #0f172a;
+      font-size: 1.5rem;
+    }
+    .reminder-form {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(15,23,42,0.04);
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display:block; margin-bottom:6px; font-weight:500; }
+    .form-group input, .form-group textarea, .reminder-form select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-family: inherit;
+      color: #0f172a;
+      background: white;
+      box-sizing: border-box;
+    }
+
+    /* Styled selects with simple SVG caret */
+    .reminder-form select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      padding-right: 40px;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23475369' stroke-width='1.6'><path d='M6 8l4 4 4-4'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px 16px;
+      cursor: pointer;
+    }
+    .reminder-form select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.06);
+    }
+
+    .reminder-list {
+      margin-top: 20px;
+      display: grid;
+      gap: 15px;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    }
+    .reminder-item {
+      display: flex;
+      flex-direction: column;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(15,23,42,0.06);
+      box-shadow: 0 4px 8px rgba(15,23,42,0.03);
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .reminder-item:hover { transform: translateY(-3px); box-shadow: 0 10px 18px rgba(15,23,42,0.06); }
+    .reminder-info { flex:1; padding: 16px; border-bottom: 1px solid rgba(15,23,42,0.04); }
+    .reminder-title { font-weight:600; margin-bottom:8px; color:#0f172a; font-size:1.05em }
+    .reminder-message { color:#475569; margin-bottom:10px; line-height:1.45 }
+    .reminder-time { color:#64748b; font-size:0.92em; display:flex; align-items:center; gap:8px }
+    .reminder-time::before { content:'🕒'; font-size:1.05em }
+
+    .reminder-actions {
+      padding: 12px 14px;
+      background: #fafafa;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .reminder-actions button {
+      border: none; color: white; padding: 8px 14px; border-radius: 8px; cursor:pointer; font-weight:500; transition: transform .15s;
+      display: inline-flex; align-items:center; gap:8px;
+    }
+    .reminder-actions button:hover { transform: translateY(-1px); }
+    .reminder-actions .edit-btn { background:#0ea5e9 }
+    .reminder-actions .edit-btn::before { content:'✏️' }
+    .reminder-actions .edit-btn:hover { background:#0284c7 }
+    .reminder-actions .delete-btn { background:#ef4444 }
+    .reminder-actions .delete-btn::before { content:'🗑️' }
+    .reminder-actions .delete-btn:hover { background:#dc2626 }
+    .reminder-actions .test-btn { background:#22c55e }
+    .reminder-actions .test-btn::before { content:'🔔' }
+    .reminder-actions .test-btn:hover { background:#16a34a }
+
+    .reminder-badge { display:inline-block; padding:4px 8px; border-radius:999px; font-size:0.85em; font-weight:500; margin-top:8px }
+    .reminder-badge.repeat { background:#f0fdf4; color:#166534; border:1px solid #bbf7d0 }
+    .reminder-badge.task { background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe }
+
+    .button-primary { background:#3b82f6; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; font-weight:600 }
+
+    /* Contenedor de toasts (notificaciones internas) */
+    .notification-container { position: fixed; bottom: 20px; right: 20px; display:flex; flex-direction:column; gap:10px; z-index:10000; pointer-events:none }
+    .toast { background:#0f172a; color:white; padding:12px 14px; border-radius:10px; box-shadow:0 6px 18px rgba(2,6,23,0.4); min-width:240px; max-width:380px; pointer-events:auto; display:flex; flex-direction:column; gap:6px; animation:slideIn 240ms ease-out }
+    .toast-title { font-weight:700; font-size:0.98em }
+    .toast-message { font-size:0.9em; color:#cbd5e1; line-height:1.2 }
+    .toast-close { align-self:flex-end; background:transparent; border:none; color:#94a3b8; cursor:pointer; font-size:1.1em; padding:2px 6px; border-radius:6px }
+    .toast-close:hover { color:#fff; background:rgba(255,255,255,0.04) }
+
+    @keyframes slideIn { from{ transform: translateY(10px); opacity:0 } to{ transform: translateY(0); opacity:1 } }
+
+    /* Responsive tweaks */
+    @media (max-width: 768px) {
+      .container { margin: 18px; padding: 14px }
+      .reminder-form { padding: 14px }
+      .reminder-list { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px }
+      .reminder-info { padding: 12px }
+      .reminder-actions { width: 100%; justify-content: space-between; padding: 10px 12px }
+      .reminder-actions button { flex: 0 0 auto }
+      .notification-container { right: 12px; bottom: 12px }
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 1.25rem }
+      .container { margin: 10px; padding: 12px }
+      .reminder-list { grid-template-columns: 1fr }
+      .reminder-item { border-radius: 10px }
+      .reminder-actions { justify-content: space-between }
+      /* center toasts on small screens for better visibility */
+      .notification-container { left: 50%; right: auto; transform: translateX(-50%); bottom: 14px }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Recordatorios</h1>
+    
+    <div class="reminder-form">
+      <div class="form-group">
+        <label for="reminderTitle">Título</label>
+        <input type="text" id="reminderTitle" placeholder="Título del recordatorio">
+      </div>
+      <div class="form-group">
+        <label for="reminderMessage">Mensaje</label>
+        <textarea id="reminderMessage" rows="3" placeholder="Mensaje del recordatorio"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="reminderTime">Hora</label>
+        <input type="datetime-local" id="reminderTime">
+      </div>
+      <div class="form-group">
+        <label for="initialNotification">Primera notificación en</label>
+        <select id="initialNotification">
+          <option value="1">1 minuto</option>
+          <option value="5">5 minutos</option>
+          <option value="15">15 minutos</option>
+          <option value="30">30 minutos</option>
+          <option value="60">1 hora</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="repeatInterval">Repetir cada</label>
+        <select id="repeatInterval">
+          <option value="8">8 horas</option>
+          <option value="24">24 horas</option>
+          <option value="168">1 semana</option>
+          <option value="0">No repetir</option>
+        </select>
+      </div>
+      <button class="button-primary" onclick="addReminder()">Agregar Recordatorio</button>
+    </div>
+
+    <div class="reminder-list" id="reminderList"></div>
+  </div>
+
+  <div id="notificationContainer" class="notification-container" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    const STORAGE_KEY = 'reminders';
+    const TASKS_KEY = 'tasks';
+    let reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let notificationTimeouts = new Map();
+    
+    function loadTasks() {
+      try {
+        return JSON.parse(localStorage.getItem(TASKS_KEY) || '{}');
+      } catch(e) {
+        console.error('Error loading tasks:', e);
+        return {};
+      }
+    }
+
+    function saveReminders() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
+      } catch(e) {
+        console.error('Error saving reminders:', e);
+        showNotification('Error', 'No se pudieron guardar los recordatorios');
+      }
+    }
+
+    function showNotification(title, message, options = {}) {
+      const container = document.getElementById('notificationContainer');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'toast-close';
+      closeBtn.setAttribute('aria-label', 'Cerrar notificación');
+      closeBtn.innerHTML = '✕';
+      closeBtn.onclick = () => closeToast(toast);
+
+      const t = document.createElement('div');
+      t.className = 'toast-title';
+      t.textContent = title;
+
+      const m = document.createElement('div');
+      m.className = 'toast-message';
+      m.textContent = message;
+
+      toast.appendChild(closeBtn);
+      toast.appendChild(t);
+      toast.appendChild(m);
+      container.appendChild(toast);
+
+      const ttl = options.duration || 5000;
+      const hideTimeout = setTimeout(() => closeToast(toast), ttl);
+      toast._hideTimeout = hideTimeout;
+
+      function closeToast(node) {
+        if (!node) return;
+        clearTimeout(node._hideTimeout);
+        node.style.opacity = '0';
+        node.style.transform = 'translateY(6px)';
+        setTimeout(() => {
+          if (node.parentNode) node.parentNode.removeChild(node);
+        }, 220);
+      }
+    }
+
+    /*
+      showSystemNotification: intenta mostrar una notificación del sistema (Notification API).
+      - Si el navegador/OS permite notificaciones (permiso granted) se usará Notification.
+      - Si no hay permiso o no hay soporte, hace fallback a showNotification (toast interno).
+      - Soporta `options.icon` y `options.image` (dependiendo del navegador puede mostrar uno u otro).
+
+      Cómo añadir una imagen o icon a una notificación:
+      - Cuando crees un reminder, añade la propiedad `icon` o `image`, por ejemplo:
+        reminder.icon = './assets/recordatorio-icon.png';
+      - El archivo debe ser accesible desde la página (ruta relativa o URL absoluta).
+      - Algunos navegadores solo muestran `icon` (pequeño) y `image` como imagen grande en la notificación.
+    */
+    function showSystemNotification(title, message, options = {}){
+      // Fallback to in-page toast
+      const fallback = () => showNotification(title, message, options);
+
+      if (!('Notification' in window)) {
+        // Not supported
+        return fallback();
+      }
+
+      const create = () => {
+        try {
+          const notifOptions = { body: message };
+          if (options.icon) notifOptions.icon = options.icon;
+          if (options.image) notifOptions.image = options.image;
+          if (options.tag) notifOptions.tag = options.tag;
+          // show Notification
+          const n = new Notification(title, notifOptions);
+          // Optional: close after a while if desired
+          if (options.duration && typeof options.duration === 'number') {
+            setTimeout(() => { try { n.close(); } catch(e){} }, options.duration);
+          }
+          // When the user clicks the notification, focus the window (nice UX)
+          n.onclick = function(ev){
+            try { window.focus(); } catch(e){}
+            // Could navigate to a specific page or open tasks
+          };
+        } catch(e){
+          // If anything falla, fallback to toast
+          fallback();
+        }
+      };
+
+      if (Notification.permission === 'granted') {
+        create();
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(p => {
+          if (p === 'granted') create(); else fallback();
+        }).catch(()=> fallback());
+      } else {
+        // denied
+        fallback();
+      }
+    }
+
+    function scheduleNotification(reminder) {
+      const now = new Date().getTime();
+      let reminderTime = new Date(reminder.time).getTime();
+      
+      if (reminder.isNew) {
+        reminderTime = now + (reminder.initialNotification * 60 * 1000);
+        reminder.time = new Date(reminderTime).toISOString();
+        reminder.isNew = false;
+        saveReminders();
+      }
+      
+      if (reminderTime > now) {
+        const timeout = setTimeout(() => {
+          // Usar notificaciones del sistema para todos los recordatorios
+          // Adjuntar tanto `icon` (pequeño) como `image` (imagen grande) para maximizar compatibilidad
+          showSystemNotification(reminder.title, reminder.message, { 
+            icon: './TT__1_-removebg-preview.png',  // Ruta al archivo de imagen proporcionado
+            duration: 8000, 
+            tag: 'reminder-' + reminder.id 
+          });
+
+          if (reminder.repeatInterval > 0) {
+            reminder.time = new Date(reminderTime + reminder.repeatInterval * 60 * 60 * 1000).toISOString();
+            scheduleNotification(reminder);
+            saveReminders();
+            renderReminders();
+          }
+        }, reminderTime - now);
+
+        notificationTimeouts.set(reminder.id, timeout);
+      }
+    }
+
+    function addReminder() {
+      const title = document.getElementById('reminderTitle').value.trim();
+      const message = document.getElementById('reminderMessage').value.trim();
+      const time = document.getElementById('reminderTime').value;
+      const initialNotification = parseInt(document.getElementById('initialNotification').value);
+      const repeatInterval = parseInt(document.getElementById('repeatInterval').value);
+
+      if (!title || !message || !time) {
+        showNotification('Error', 'Por favor completa todos los campos', { duration: 3000 });
+        return;
+      }
+
+      const reminder = {
+        id: Date.now(),
+        title,
+        message,
+        time,
+        initialNotification,
+        repeatInterval,
+        isNew: true
+      };
+
+      reminders.push(reminder);
+      saveReminders();
+      scheduleNotification(reminder);
+      renderReminders();
+      
+      // Limpiar formulario
+      document.getElementById('reminderTitle').value = '';
+      document.getElementById('reminderMessage').value = '';
+      document.getElementById('reminderTime').value = '';
+      document.getElementById('repeatInterval').value = '0';
+      
+      showNotification('Éxito', 'Recordatorio agregado correctamente', { duration: 2000 });
+    }
+
+    function deleteReminder(id) {
+      const timeout = notificationTimeouts.get(id);
+      if (timeout) {
+        clearTimeout(timeout);
+        notificationTimeouts.delete(id);
+      }
+
+      reminders = reminders.filter(r => r.id !== id);
+      saveReminders();
+      renderReminders();
+    }
+
+    function formatDateTime(dateString) {
+      return new Date(dateString).toLocaleString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function formatDate(dateString) {
+      const [year, month, day] = dateString.split('-');
+      return new Date(year, month - 1, day).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    function checkTasks() {
+      console.log('Checking tasks...');
+      const tasks = loadTasks();
+      let hasNewTasks = false;
+
+      for (const [date, taskList] of Object.entries(tasks)) {
+        taskList.forEach((task) => {
+          if (!task.notified && !task.done) {
+            const taskDate = new Date(date);
+            const now = new Date();
+            // Programar notificación para mañana a las 9 AM si la fecha ya pasó
+            const notificationDate = new Date(
+              taskDate.getTime() < now.getTime() ? now : taskDate
+            );
+            notificationDate.setHours(9, 0, 0, 0);
+            
+            const reminder = {
+              id: Date.now() + Math.random(),
+              title: `Tarea para ${formatDate(date)}`,
+              message: task.text,
+              time: notificationDate.toISOString(),
+              initialNotification: 1,
+              repeatInterval: 24,
+              isNew: false,
+              taskId: task.id || Date.now()
+            };
+            
+            // Evitar duplicados
+            if (!reminders.some(r => r.taskId === reminder.taskId)) {
+              reminders.push(reminder);
+              hasNewTasks = true;
+            }
+            task.notified = true;
+          }
+        });
+      }
+
+      if (hasNewTasks) {
+        localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+        saveReminders();
+        renderReminders();
+        console.log('New tasks found and notifications scheduled');
+      }
+    }
+
+    function editReminder(id) {
+      const reminder = reminders.find(r => r.id === id);
+      if (!reminder) return;
+      
+      document.getElementById('reminderTitle').value = reminder.title;
+      document.getElementById('reminderMessage').value = reminder.message;
+      document.getElementById('reminderTime').value = reminder.time.slice(0, 16);
+      document.getElementById('initialNotification').value = reminder.initialNotification || 1;
+      document.getElementById('repeatInterval').value = reminder.repeatInterval;
+      
+      deleteReminder(id);
+    }
+
+    function testReminder(id) {
+      const reminder = reminders.find(r => r.id === id);
+      if (!reminder) return;
+      
+      // Mostrar la misma imagen como icon e image para la prueba
+      showSystemNotification(reminder.title, reminder.message, {
+        icon: './TT__1_-removebg-preview.png',
+        image: './TT__1_-removebg-preview.png',
+        duration: 8000,
+        tag: 'test-' + reminder.id
+      });
+    }
+
+    function renderReminders() {
+      const list = document.getElementById('reminderList');
+      list.innerHTML = '';
+
+      const sortedReminders = reminders.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+      if (sortedReminders.length === 0) {
+        list.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;">No hay recordatorios pendientes</div>';
+        return;
+      }
+
+      sortedReminders.forEach(reminder => {
+        const div = document.createElement('div');
+        div.className = 'reminder-item';
+        div.innerHTML = `
+          <div class="reminder-info">
+            <div class="reminder-title">${reminder.title}</div>
+            <div class="reminder-message">${reminder.message}</div>
+            <div class="reminder-time">${formatDateTime(reminder.time)}</div>
+            ${reminder.repeatInterval ? 
+              `<div class="reminder-badge repeat">Se repite cada ${reminder.repeatInterval} horas</div>` : ''}
+            ${reminder.taskId ? 
+              `<div class="reminder-badge task">Tarea programada</div>` : ''}
+          </div>
+          <div class="reminder-actions">
+            <button onclick="editReminder(${reminder.id})" class="edit-btn">Editar</button>
+            <button onclick="deleteReminder(${reminder.id})" class="delete-btn">Eliminar</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    // Inicialización
+    window.addEventListener('load', () => {
+      // Revisar tareas existentes al cargar
+      checkTasks();
+      
+      // Programar todas las notificaciones
+      reminders.forEach(scheduleNotification);
+      
+      // Mostrar recordatorios
+      renderReminders();
+      
+      // Revisar tareas nuevas cada minuto
+      setInterval(checkTasks, 60000);
+    });
+  </script>
+</body>
+</html>
